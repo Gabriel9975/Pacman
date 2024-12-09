@@ -2,7 +2,7 @@
 #include "entities.h"
 #include "collision.h"
 #include <stdio.h>
-#include <allegro5/allegro_audio.h>
+#include <allegro4/allegro_audio.h>
 
 void init_game(Game *game) {
     game->score = 0;
