@@ -1,26 +1,24 @@
-#ifndef ENTITIES_H
-#define ENTITIES_H
+#ifndef ENTITY_H
+#define ENTITY_H
 
-// Types de direction
-typedef enum {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    NONE
-} Direction;
+#include <stdbool.h>
+#include "maze.h"
 
-// Structure pour les entités (Pacman, fantômes, etc.)
 typedef struct {
-    int x, y;           // Position
-    int width, height;  // Dimensions
-    Direction direction; // Direction actuelle
-    float speed;         // Vitesse de déplacement
-    ALLEGRO_BITMAP *sprite;
-} Entity;
+    int x, y;
+    int direction;
+    int lives;
+    int score;
+} Pacman;
 
-// Prototypes des fonctions
-void move_pacman(Entity *pacman, int maze[28][31], Direction dir);
-void move_ghost(Entity *ghost, int maze[28][31]);
-void init_entity(Entity *entity, int x, int y, int width, int height, float speed, ALLEGRO_BITMAP *sprite);
+typedef struct {
+    int x, y;
+    int direction;
+} Ghost;
+
+Pacman init_pacman();
+void init_ghosts(Ghost ghosts[]);
+void move_pacman(Pacman *pacman, int input, int labyrinthe[ROWS][COLS]);
+void move_ghost(Ghost *ghost, int labyrinthe[ROWS][COLS]);
+
 #endif
