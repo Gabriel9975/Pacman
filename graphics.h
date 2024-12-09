@@ -1,15 +1,10 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-#include <allegro4/allegro.h>
-#include <allegro4/allegro_image.h>
-#include <allegro5/allegro_primitives.h>
+#include <allegro.h>
+#include "entity.h"
 
-// Prototypes des fonctions graphiques
-void init_graphics();
-void draw_maze(int maze[28][31]);
-void draw_entity(Entity entity, ALLEGRO_BITMAP *sprite);
-void draw_score(int score);
-void cleanup_graphics();
+void draw_entity(BITMAP *sprite, int x, int y);
+void draw_hud(Pacman *pacman);
 
 #endif
