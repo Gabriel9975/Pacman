@@ -1,9 +1,5 @@
+#include <allegro.h>
 #include <stdio.h>
-#include <allegro4/allegro.h>
-#include <allegro4/allegro_image.h>
-#include <allegro4/allegro_primitives.h>
-#include <allegro4/allegro_audio.h>
-#include <allegro4/allegro_acodec.h>
 #include "game.h"
 #include "graphics.h"
 #include "input.h"
@@ -11,107 +7,79 @@
 #include "utils.h"
 #include "collision.h"
 
+// Dimensions de l'écran
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
+#define FPS 60
+
 int main() {
     // Initialisation d'Allegro
-    if (!al_init()) {
-        fprintf(stderr, "Erreur lors de l'initialisation d'Allegro.\n");
+    allegro_init();
+    install_keyboard();
+    install_timer();
+    install_sound(DIGI_AUTODETECT, MIDI_AUTODETECT, NULL);
+
+    // Mode graphique
+    if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0) != 0) {
+        allegro_message("Impossible d'initialiser le mode graphique : %s", allegro_error);
         return -1;
     }
 
-    // Initialisation des addons
-    al_init_image_addon();
-    al_init_primitives_addon();
-    al_install_keyboard();
-    al_install_audio();
-    al_init_acodec_addon();
-
-    al_reserve_samples(10); // Réserver de la place pour les effets sonores
-
-    // Création de la fenêtre
-    ALLEGRO_DISPLAY *display = al_create_display(SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (!display) {
-        fprintf(stderr, "Erreur lors de la création de la fenêtre.\n");
-        return -1;
+    // Chargement des sprites
+    BITMAP *pacman_sprite = load_bitmap("assets/sprites/pacman.bmp", NULL);
+    BITMAP *ghost_sprites[4];
+    for (int i = 0; i < 4; i++) {
+        char ghost_path[50];
+        sprintf(ghost_path, "assets/sprites/ghost%d.bmp", i + 1);
+        ghost_sprites[i] = load_bitmap(ghost_path, NULL);
+        if (!ghost_sprites[i]) {
+            allegro_message("Erreur en chargeant le sprite : %s", ghost_path);
+        }
     }
 
-    // Initialisation du timer
-    ALLEGRO_TIMER *timer = al_create_timer(1.0 / FPS);
-    if (!timer) {
-        fprintf(stderr, "Erreur lors de la création du timer.\n");
-        return -1;
-    }
-
-    // File d'événements
-    ALLEGRO_EVENT_QUEUE *event_queue = al_create_event_queue();
-    if (!event_queue) {
-        fprintf(stderr, "Erreur lors de la création de la file d'événements.\n");
-        return -1;
-    }
-    
-    al_register_event_source(event_queue, al_get_keyboard_event_source());
-    al_register_event_source(event_queue, al_get_timer_event_source(timer));
-    al_register_event_source(event_queue, al_get_display_event_source(display));
+    // Chargement des sons
+    SAMPLE *chomp_sound = load_sample("assets/sounds/pacman_chomp.wav");
 
     // Initialisation du jeu
     Game game;
     init_game(&game);
     load_level(&game, "assets/levels/level1.txt");
 
-    // Chargement des sprites
-    game.pacman.sprite = al_load_bitmap("assets/sprites/pacman.png");
-    for(int i = 0; i < 4; i++){
-        char ghost_path[50];
-        sprintf(ghost_path, "assets/sprites/ghost%d.png", i + 1);
-        game.ghosts[i].sprite = al_load_bitmap(ghost_path);
-    }
-
-    // Initialisation des sons
-    ALLEGRO_SAMPLE *chomp_sound = al_load_sample("assets/sounds/pacman_chomp.wav");
-    // ... (charger d'autres sons)
-
     // Boucle principale
     bool running = true;
-    bool redraw = true;
-    al_start_timer(timer);
     while (running) {
-        ALLEGRO_EVENT ev;
-        al_wait_for_event(event_queue, &ev);
-
-        if (ev.type == ALLEGRO_EVENT_TIMER) {
-            // Logique du jeu (mise à jour)
-            update_game(&game);
-            redraw = true;
-        } else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
-            // Gestion des entrées clavier
-            handle_input(&game, ev.keyboard.keycode);
-        } else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-            running = false;
-        }
-
-        if (redraw && al_is_event_queue_empty(event_queue)) {
-            redraw = false;
-            // Dessin
-            al_clear_to_color(al_map_rgb(0, 0, 0)); // Effacer l'écran en noir
-            draw_maze(game.maze);
-            draw_entity(game.pacman, game.pacman.sprite);
-            for (int i = 0; i < 4; i++) {
-                draw_entity(game.ghosts[i], game.ghosts[i].sprite);
+        // Entrées clavier
+        if (keypressed()) {
+            int key = readkey() >> 8;
+            if (key == KEY_ESC) {
+                running = false;
+            } else {
+                handle_input(&game, key);
             }
-            draw_score(game.score);
-            al_flip_display();
         }
+
+        // Mise à jour
+        update_game(&game);
+
+        // Dessin
+        clear_to_color(screen, makecol(0, 0, 0)); // Effacer l'écran en noir
+        draw_maze(game.maze, screen);
+        draw_entity(game.pacman, pacman_sprite, screen);
+        for (int i = 0; i < 4; i++) {
+            draw_entity(game.ghosts[i], ghost_sprites[i], screen);
+        }
+        draw_score(game.score, screen);
+
+        rest(1000 / FPS); // Pause pour respecter le FPS
     }
 
     // Nettoyage
-    al_destroy_timer(timer);
-    al_destroy_display(display);
-    al_destroy_event_queue(event_queue);
-    al_destroy_bitmap(game.pacman.sprite);
-    for(int i = 0; i < 4; i++){
-        al_destroy_bitmap(game.ghosts[i].sprite);
+    destroy_bitmap(pacman_sprite);
+    for (int i = 0; i < 4; i++) {
+        destroy_bitmap(ghost_sprites[i]);
     }
-    al_destroy_sample(chomp_sound);
-    // ... (libérer les autres ressources)
+    destroy_sample(chomp_sound);
 
     return 0;
 }
+END_OF_MAIN();
