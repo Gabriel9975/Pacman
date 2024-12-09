@@ -1,6 +1,6 @@
 #include "graphics.h"
-#include <allegro5/allegro.h>
-#include <allegro5/allegro_primitives.h>
+#include <allegro4/allegro.h>
+#include <allegro4/allegro_primitives.h>
 
 void init_graphics() {
     // ... (initialisation si nécessaire)
