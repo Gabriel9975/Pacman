@@ -1,7 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <allegro5/allegro.h>
+#include <allegro4/allegro.h>
 #include "entities.h"
 
 #define SCREEN_WIDTH 800
